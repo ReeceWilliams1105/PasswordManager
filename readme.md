@@ -9,22 +9,6 @@ A simple and secure password manager application to store, retrieve, and manage 
 - Search for passwords by account or service name
 - User authentication for access control
 
-## Installation
-
-1. Clone the repository:
-    ```
-    git clone https://github.com/yourusername/password-manager.git
-    ```
-2. Install dependencies:
-    ```
-    cd password-manager
-    npm install
-    ```
-3. Start the application:
-    ```
-    npm start
-    ```
-
 ## Usage
 
 - Launch the app and create an account.
