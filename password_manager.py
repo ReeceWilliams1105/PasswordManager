@@ -4,21 +4,8 @@ import sqlite3
 
 from database import create_database
 from settings import service_name
-from encryption import set_master_key
-
-class FirstTimeWindow(ctk.CTkToplevel):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.geometry("400x300")
-
-        self.Toplabel = ctk.CTkLabel(self, text="First Time Setup")
-        self.Toplabel.pack(padx=20, pady=20)
-
-        self.LowerLabel = ctk.CTkLabel(self, text="Please set a master password to unlock the application.")        
-        self.LowerLabel.pack()
-
-        self.mPwSet = ctk.CTkEntry(self, placeholder_text="Master Vault Password", width=380, height=40)
-        self.mPwSet.pack()
+from encryption import set_master_key, check_masterKey
+import settings
 
 class password_manager(ctk.CTk):
     WinWidth=532
@@ -29,7 +16,6 @@ class password_manager(ctk.CTk):
         super().__init__()
         create_database()
         self.geometry(str(self.WinWidth)+"x"+str(self.WinHeight))
-        self.firstTimeWindow = None
         self.title("MunCrypt Password Manager")
 
         """Title for the app"""
@@ -38,31 +24,29 @@ class password_manager(ctk.CTk):
 
         """Master password entry box, displays * by default"""
         self.mPw = ctk.CTkEntry(self, placeholder_text="Master Vault Password", width=self.WinWidth - 20, height = self.WinWidth/5, show="*")
+        self.mPw.bind("<Button>", self.masterCheck)
+        self.mPw.bind("<Return>", self.unlockEvent)
         self.mPw.pack()
 
         self.entryButton = ctk.CTkButton(self, width = self.WinWidth/2, height = self.WinHeight/10, text="Unlock", command=self.unlockEvent,
                                          font=self.StandardFont)
         self.entryButton.pack(padx=50, pady=50)
-        """ https://www.askpython.com/python-modules/tkinter/bind-in-tkinter - To use when clicking on entry box to solve focus problem."""
-        self.masterCheck()
 
-    def unlockEvent(self):
-        print(keyring.get_password(service_name, service_name))
+    def unlockEvent(self, *args):
+        if check_masterKey(self.mPw.get()):
+            settings.login = True
+            settings.mpwTemp = self.mPw.get()
+            print(settings.login)
+            self.destroy()
         return None
     
-    def masterCheck(self):
-        if keyring.get_password(service_name, service_name) != None:
-            return
-        else:
-            self.firstTimeSetup()
-            self.firstTimeWindow.focus()
-
-    def firstTimeSetup(self):
-        if self.firstTimeWindow is None or not self.firstTimeWindow.winfo_exists():
-            self.firstTimeWindow = FirstTimeWindow(self)
-        else:
-            self.firstTimeWindow.focus()
-        
-
-app=password_manager()
-app.mainloop()
+    """Checks to see if password already exists in local keyring, if it doesn't, repeatedly prompts user for master password."""
+    def masterCheck(self, event):
+        submitted = False
+        while(keyring.get_password(service_name, service_name) == None) and submitted == False:
+            self.setupDialog = ctk.CTkInputDialog(text="Please set a master password to unlock the application.", title="First Time Setup")
+            input = self.setupDialog.get_input()
+            if input != None:
+                set_master_key(input)
+                submitted = True
+        return
